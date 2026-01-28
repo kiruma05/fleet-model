@@ -56,8 +56,21 @@ def compute_safety_score(features):
         return 0.0
     
     # Penalties
-    braking_pen = min(features['harsh_braking_rate'] * 15, 30)
-    accel_pen = min(features['harsh_accel_rate'] * 10, 20)
+    # Fallback if rates are missing but counts/distance exist
+    if 'harsh_braking_rate' not in features and 'harsh_braking_count' in features and 'distance_km' in features:
+        features['harsh_braking_rate'] = features['harsh_braking_count'] / max(features['distance_km'], 0.1)
+    
+    if 'harsh_accel_rate' not in features and 'harsh_accel_count' in features and 'distance_km' in features:
+        features['harsh_accel_rate'] = features['harsh_accel_count'] / max(features['distance_km'], 0.1)
+
+    if 'crash_events' not in features:
+        features['crash_events'] = 0
+
+    if 'speed_compliance' not in features:
+        features['speed_compliance'] = 1.0
+
+    braking_pen = min(features.get('harsh_braking_rate', 0) * 15, 30)
+    accel_pen = min(features.get('harsh_accel_rate', 0) * 10, 20)
     crash_pen = 100 if features['crash_events'] > 0 else 0
     
     speed_score = features['speed_compliance'] * 40
