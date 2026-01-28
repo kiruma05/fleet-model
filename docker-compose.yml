@@ -1,21 +1,16 @@
-version: '3.8'
-
 services:
   api:
     build: .
     ports:
       - "8000:8000"
     environment:
-      # Pass through environment variables from the host .env file
       - DATABASE_URL=${DATABASE_URL}
       - FLEET_DATABASE_URL=${FLEET_DATABASE_URL}
       - IOT_DATABASE_URL=${IOT_DATABASE_URL}
       - SECRET_KEY=${SECRET_KEY}
-      # volumes:
-      # Optional: Mount current directory for development (hot reload)
-      # In production, remove this to use the copied code in image
-      # - .:/app
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-      # Overwrite command for development (hot reload) if desired
-      # command: uvicorn api:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - shared-net
+
+networks:
+  shared-net:
+    external: true
