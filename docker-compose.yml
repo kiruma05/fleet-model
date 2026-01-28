@@ -11,9 +11,12 @@ services:
       - FLEET_DATABASE_URL=${FLEET_DATABASE_URL}
       - IOT_DATABASE_URL=${IOT_DATABASE_URL}
       - SECRET_KEY=${SECRET_KEY}
-      # volumes:
+      volumes:
       # Optional: Mount current directory for development (hot reload)
       # In production, remove this to use the copied code in image
       # - .:/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
       # Overwrite command for development (hot reload) if desired
       # command: uvicorn api:app --host 0.0.0.0 --port 8000 --reload
