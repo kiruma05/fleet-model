@@ -11,3 +11,4 @@ apscheduler
 python-dotenv
 pytest
 httpx
+gunicorn
