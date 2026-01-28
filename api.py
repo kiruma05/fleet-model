@@ -31,7 +31,7 @@ async def log_exceptions_middleware(request, call_next):
         traceback.print_exc(file=sys.stderr)
         raise e
 
-@app.get("/")
+@app.get("/", summary="API Root", description="Verifies that the Fleet ML API is running and accessible.")
 def read_root():
     return {"message": "Fleet ML Services POC API is running"}
 
@@ -135,11 +135,20 @@ def _to_native(value):
 
 # --- Consolidated Summary Endpoints (Only Public APIs) ---
 
-@app.get("/api/v1/trips/{trip_id}/summary")
+@app.get("/api/v1/trips/{trip_id}/summary", 
+          summary="Get Trip Safety Summary", 
+          description="Analyzes a specific trip to provide a safety score, detect violations, and calculate fuel efficiency features.")
 def get_trip_summary(trip_id: uuid.UUID,
                      fleet_db: Session = Depends(get_fleet_db),
                      iot_db: Session = Depends(get_iot_db),
                      ml_db: Session = Depends(get_ml_db)):
+    """
+    Returns a comprehensive summary of a trip, including:
+    - **Safety Score**: 0-100 (100 is best).
+    - **Violations**: List of speeding or harsh driving events.
+    - **Risk Analysis**: AI-predicted risk of future violations.
+    - **Fuel Efficiency**: Estimated KM per Liter.
+    """
     trip = fleet_db.query(Trip).filter(Trip.id == trip_id).first()
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
@@ -178,11 +187,19 @@ def get_trip_summary(trip_id: uuid.UUID,
         "driver_safety_score": driver_score
     })
 
-@app.get("/api/v1/drivers/{driver_id}/summary")
+@app.get("/api/v1/drivers/{driver_id}/summary", 
+          summary="Get Driver Safety Profile", 
+          description="Aggregates all trips for a specific driver to compute an overall safety score and violation history.")
 def get_driver_summary(driver_id: uuid.UUID,
                        fleet_db: Session = Depends(get_fleet_db),
                        iot_db: Session = Depends(get_iot_db),
                        ml_db: Session = Depends(get_ml_db)):
+    """
+    Returns the driver's safety profile:
+    - **Safety Score**: Aggregate score across all trips.
+    - **Violations Summary**: Counts of violations by type and severity.
+    - **Violations History**: Full list of all violations committed by this driver.
+    """
     driver_score = _get_or_compute_driver_safety_score(driver_id, fleet_db, iot_db, ml_db)
     trips = fleet_db.query(Trip).filter(Trip.main_driver_id == driver_id).all()
     all_violations = []
@@ -210,13 +227,17 @@ def get_driver_summary(driver_id: uuid.UUID,
         "violations_summary": summary
     })
 
-@app.get("/api/v1/analytics/maintenance/predict/{vehicle_id}")
+@app.get("/api/v1/analytics/maintenance/predict/{vehicle_id}", 
+          summary="Predict Vehicle Maintenance", 
+          description="Analyzes vehicle telemetry to predict upcoming maintenance needs and failure risks.")
 def get_vehicle_maintenance_prediction(vehicle_id: uuid.UUID, 
                                      fleet_db: Session = Depends(get_fleet_db),
                                      iot_db: Session = Depends(get_iot_db),
                                      ml_db: Session = Depends(get_ml_db)):
     """
-    Predictive maintenance (Read-Only).
+    Predictive maintenance analysis:
+    - **Predictions**: List of predicted component failures (e.g., "Brake Pad Wear").
+    - **Maintenance Risk Score**: 0.0 - 1.0 probability of immediate attention needed.
     """
     preds = maintenance.predict_maintenance(iot_db, fleet_db, str(vehicle_id))
     risk_features = ml_pipeline.build_vehicle_maintenance_features(iot_db, fleet_db, str(vehicle_id))
@@ -243,11 +264,20 @@ def get_vehicle_maintenance_prediction(vehicle_id: uuid.UUID,
         "maintenance_risk_score": risk_score
     }
 
-@app.get("/api/v1/maintenance/fleet/summary")
+@app.get("/api/v1/maintenance/fleet/summary", 
+          summary="Get Fleet Health Overview", 
+          description="Provides a high-level summary of the maintenance status across the entire fleet.")
 def get_fleet_maintenance_summary(db: Session = Depends(get_fleet_db)):
+    """
+    Returns:
+    - Count of healthy vs. at-risk vehicles.
+    - List of vehicles requiring immediate service.
+    """
     return maintenance.get_fleet_health_summary(db)
 
-@app.post("/api/v1/ml/train", include_in_schema=False)
+@app.post("/api/v1/ml/train", 
+           summary="Trigger Model Training", 
+           description="Triggers the ML pipeline to retrain all models using the latest trip data.")
 def train_models(use_mock: bool = False,
                  trips_limit: int = 50,
                  rows_per_trip: int = 20,
@@ -255,6 +285,12 @@ def train_models(use_mock: bool = False,
                  fleet_db: Session = Depends(get_fleet_db),
                  iot_db: Session = Depends(get_iot_db),
                  ml_db: Session = Depends(get_ml_db)):
+    """
+    **Admin Only**: Retrains the machine learning models.
+    - **use_mock**: If True, generates synthetic data for training (dev mode).
+    - **trips_limit**: Number of trips to process.
+    - **reset_mock**: If True, wipes existing mock data before generating new data.
+    """
     mock_info = None
     trips_query = fleet_db.query(Trip).order_by(Trip.start_time.desc())
     if trips_limit:
