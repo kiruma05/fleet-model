@@ -90,6 +90,7 @@ class IOTTelemetry(Base):
     is_moving = None
     
     trip_id = Column(PgUUID(as_uuid=True), nullable=True)
+    driver_id = Column(PgUUID(as_uuid=True), nullable=True)
 
     # Alias for compatibility with code expecting 'timestamp'
     @property
