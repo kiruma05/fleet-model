@@ -189,6 +189,11 @@ def build_trip_safety_features(iot_db: Session, fleet_db: Session, trip_id: str)
     speed_std = float(df["speed"].std())
     if pd.isna(speed_std): speed_std = 0.0
     
+    # Speed compliance calculation
+    speed_limit = 100
+    speeding_instances = len(df[df['speed'] > speed_limit]) if 'speed' in df.columns else 0
+    speed_compliance = 1.0 - (speeding_instances / len(df)) if len(df) > 0 else 1.0
+    
     features = {
         "avg_speed": avg_speed,
         "speed_std": speed_std,
@@ -197,7 +202,8 @@ def build_trip_safety_features(iot_db: Session, fleet_db: Session, trip_id: str)
         "idling_ratio": float(idling_ratio) if not pd.isna(idling_ratio) else 0.0,
         "cornering_intensity": float(cornering_intensity) if not pd.isna(cornering_intensity) else 0.0,
         "rpm_stress_ratio": float(rpm_stress_ratio) if not pd.isna(rpm_stress_ratio) else 0.0,
-        "distance_km": distance
+        "distance_km": distance,
+        "speed_compliance": float(speed_compliance)
     }
     return features
 
