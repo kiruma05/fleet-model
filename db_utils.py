@@ -30,10 +30,19 @@ IOTSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=iot_engin
 FleetSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=fleet_engine)
 MLSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=ml_engine)
 
+from sqlalchemy.exc import OperationalError
+
 def init_db():
     """Initialization check (Schema creation for local ML DB)"""
     # Create tables in the local ML database
-    Base.metadata.create_all(bind=ml_engine)
+    try:
+        Base.metadata.create_all(bind=ml_engine)
+    except OperationalError as e:
+        # Ignore race conditions if multiple workers try to init DB simultaneously
+        if "already exists" in str(e):
+            pass
+        else:
+            raise
 
 
 def get_iot_db():
