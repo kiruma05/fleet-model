@@ -31,12 +31,20 @@ def detect_violations_from_iot(iot_db: Session, fleet_db: Session, trip_id: str,
     for tel in telemetry:
         # 1. Speeding
         if tel.speed and tel.speed > speed_limit:
+            diff = tel.speed - speed_limit
+            if diff > 30:
+                severity = 3
+            elif diff > 15:
+                severity = 2
+            else:
+                severity = 1
+                
             violations_detected.append(Violation(
                 trip_id=trip_id,
                 driver_id=driver_id,
                 vehicle_id=tel.vehicle_id,
                 violation_type='SPEEDING',
-                severity=1,
+                severity=severity,
                 timestamp=tel.timestamp,
                 latitude=tel.latitude,
                 longitude=tel.longitude,
@@ -50,7 +58,7 @@ def detect_violations_from_iot(iot_db: Session, fleet_db: Session, trip_id: str,
                 driver_id=driver_id,
                 vehicle_id=tel.vehicle_id,
                 violation_type='HARSH_BRAKING',
-                severity=1,
+                severity=2,  # Harsh braking is moderately severe
                 timestamp=tel.timestamp,
                 latitude=tel.latitude,
                 longitude=tel.longitude
