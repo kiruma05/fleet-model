@@ -38,47 +38,33 @@ def read_root():
 # --- Shared Helpers ---
 
 def _get_or_compute_driver_safety_score(driver_id: uuid.UUID, fleet_db: Session, iot_db: Session, ml_db: Session):
+    # Always recompute with new logic for now to ensure freshness
+    score = safety_score.calculate_driver_safety_score(fleet_db, str(driver_id))
+    
+    # Update or Create in ML DB
     db_score = ml_db.query(DriverSafetyScore).filter(DriverSafetyScore.driver_id == driver_id).first()
+    trip_count = fleet_db.query(Trip).filter(Trip.main_driver_id == driver_id).count() 
+    
     if db_score:
-        return {
-            "driver_id": driver_id,
-            "score": db_score.score,
-            "trip_count": db_score.trip_count,
-            "last_updated": db_score.last_updated
-        }
+        db_score.score = score
+        db_score.trip_count = trip_count
+        db_score.last_updated = datetime.datetime.utcnow()
+    else:
+        db_score = DriverSafetyScore(
+            driver_id=driver_id,
+            score=score,
+            trip_count=trip_count,
+            last_updated=datetime.datetime.utcnow()
+        )
+        ml_db.add(db_score)
     
-    trips = fleet_db.query(Trip).filter(Trip.main_driver_id == driver_id).all()
-    if not trips:
-        return {"driver_id": driver_id, "score": 100.0, "trip_count": 0}
-    
-    model, feature_names, _ = ml_pipeline.load_latest_model(ml_db, "safety_score")
-    scores = []
-    for trip in trips:
-        features = ml_pipeline.build_trip_safety_features(iot_db, fleet_db, str(trip.id))
-        if not features:
-            continue
-        if model and feature_names:
-            row = [features.get(name, 0.0) for name in feature_names]
-            scores.append(float(model.predict([row])[0]))
-        else:
-            scores.append(safety_score.compute_safety_score(features))
-    if not scores:
-        return {"driver_id": driver_id, "score": 100.0, "trip_count": 0}
-    avg_score = float(sum(scores) / len(scores))
-    new_score = DriverSafetyScore(
-        driver_id=driver_id,
-        score=avg_score,
-        trip_count=len(scores),
-        last_updated=datetime.datetime.utcnow()
-    )
-    ml_db.add(new_score)
     ml_db.commit()
     
     return {
         "driver_id": driver_id,
-        "score": avg_score,
-        "trip_count": len(trips),
-        "last_updated": new_score.last_updated
+        "score": score,
+        "trip_count": trip_count,
+        "last_updated": db_score.last_updated
     }
 
 def _serialize_violation(v: Violation):
