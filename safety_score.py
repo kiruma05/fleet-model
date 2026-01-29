@@ -1,7 +1,9 @@
+from sqlalchemy import func
 import pandas as pd
 import numpy as np
-from models import IOTTelemetry, Event, Trip
+from models import IOTTelemetry, Event, Trip, Violation, DriverSafetyScore
 from sqlalchemy.orm import Session
+import datetime
 
 def calculate_trip_features(iot_db: Session, fleet_db: Session, trip_id: str):
     """
@@ -82,4 +84,89 @@ def compute_safety_score(features):
     
     return max(0, min(100, final_score))
 
+def calculate_driver_safety_score(db: Session, driver_id: str):
+    """
+    Calculate safety score for a driver based on their trips and violations.
+    """
+    # 1. Fetch all trips for the driver
+    trips = db.query(Trip).filter(Trip.main_driver_id == driver_id).all()
+    
+    if not trips:
+        return 0.0
+        
+    total_distance = 0.0
+    for trip in trips:
+        try:
+            dist = float(trip.distance_km) if trip.distance_km else 0.0
+            total_distance += dist
+        except (ValueError, TypeError):
+            continue
+            
+    if total_distance < 1.0:
+        return 0.0 # Not enough data
+        
+    # 2. Fetch all violations for the driver
+    violations = db.query(Violation).filter(Violation.driver_id == driver_id).all()
+    
+    harsh_braking_count = 0
+    harsh_accel_count = 0
+    crash_count = 0
+    speeding_count = 0 
+    
+    for v in violations:
+        if v.violation_type == 'HARSH_BRAKING':
+            harsh_braking_count += 1
+        elif v.violation_type == 'HARSH_ACCELERATION':
+            harsh_accel_count += 1
+        elif v.violation_type == 'CRASH_INCIDENT':
+            crash_count += 1
+        elif v.violation_type == 'SPEEDING':
+            speeding_count += 1
+            
+    # 3. Compute metrics
+    # Speed compliance is tricky without raw points, 
+    # but we can approximate it by saying more speeding violations = lower compliance
+    # Let's say 1 speeding violation per 100km reduces compliance by 10%
+    speeding_rate_per_100km = (speeding_count / total_distance) * 100
+    speed_compliance = max(0.0, 1.0 - (speeding_rate_per_100km * 0.1))
+    
+    features = {
+        'harsh_braking_count': harsh_braking_count,
+        'harsh_accel_count': harsh_accel_count,
+        'crash_events': crash_count,
+        'distance_km': total_distance,
+        'speed_compliance': speed_compliance
+    }
+    
+    return compute_safety_score(features)
 
+def update_driver_scores(db: Session):
+    """
+    Update safety scores for all drivers.
+    """
+    # Get all distinct driver IDs from Trip table
+    driver_ids = db.query(Trip.main_driver_id).distinct().all()
+    driver_ids = [d[0] for d in driver_ids if d[0]]
+    
+    for d_id in driver_ids:
+        score = calculate_driver_safety_score(db, str(d_id))
+        
+        # Update or create record
+        existing = db.query(DriverSafetyScore).filter(DriverSafetyScore.driver_id == d_id).first()
+        
+        # Count trips
+        trip_count = db.query(Trip).filter(Trip.main_driver_id == d_id).count() 
+        
+        if existing:
+            existing.score = score
+            existing.trip_count = trip_count
+            existing.last_updated = datetime.datetime.utcnow()
+        else:
+            new_score = DriverSafetyScore(
+                driver_id=d_id,
+                score=score,
+                trip_count=trip_count
+            )
+            db.add(new_score)
+            
+    db.commit()

@@ -51,6 +51,7 @@ def detect_violations_from_iot(iot_db: Session, fleet_db: Session, trip_id: str,
                 metadata_json={'actual_speed': tel.speed, 'limit': speed_limit}
             ))
             
+                
         # 2. Harsh Behavior (Direct from IOT flags)
         if tel.harsh_braking:
             violations_detected.append(Violation(
@@ -59,6 +60,18 @@ def detect_violations_from_iot(iot_db: Session, fleet_db: Session, trip_id: str,
                 vehicle_id=tel.vehicle_id,
                 violation_type='HARSH_BRAKING',
                 severity=2,  # Harsh braking is moderately severe
+                timestamp=tel.timestamp,
+                latitude=tel.latitude,
+                longitude=tel.longitude
+            ))
+
+        if tel.harsh_acceleration:
+            violations_detected.append(Violation(
+                trip_id=trip_id,
+                driver_id=driver_id,
+                vehicle_id=tel.vehicle_id,
+                violation_type='HARSH_ACCELERATION',
+                severity=2,
                 timestamp=tel.timestamp,
                 latitude=tel.latitude,
                 longitude=tel.longitude
