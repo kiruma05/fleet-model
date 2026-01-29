@@ -157,6 +157,9 @@ def get_trip_summary(trip_id: uuid.UUID,
     if efficiency is None:
         efficiency = fuel_efficiency.calculate_trip_fuel_efficiency(iot_db, fleet_db, str(trip_id))
     
+    # Summarize violations
+    violations_summary = _summarize_violations(trip_violations)
+    
     driver_score = None
     if trip.main_driver_id:
         driver_score = _get_or_compute_driver_safety_score(trip.main_driver_id, fleet_db, iot_db, ml_db)
@@ -167,8 +170,8 @@ def get_trip_summary(trip_id: uuid.UUID,
         "trip_safety_score": trip_score,
         "trip_safety_features": features,
         "trip_violations_risk": violations_risk,
-        "trip_violations": [_serialize_violation(v) for v in trip_violations],
         "trip_violations_count": len(trip_violations),
+        "trip_violations_summary": violations_summary,
         "trip_fuel_efficiency_kpl": efficiency,
         "driver_safety_score": driver_score
     })
