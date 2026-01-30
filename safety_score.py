@@ -103,7 +103,12 @@ def calculate_driver_safety_score(db: Session, driver_id: str):
             continue
             
     if total_distance < 1.0:
-        return 0.0 # Not enough data
+        # Fallback for POC/Mock data if distance_km is not populated in Trip table
+        # Assume average of 10km per trip if trips exist
+        if trips:
+            total_distance = len(trips) * 10.0
+        else:
+            return 0.0 # Truly no data
         
     # 2. Fetch all violations for the driver
     violations = db.query(Violation).filter(Violation.driver_id == driver_id).all()

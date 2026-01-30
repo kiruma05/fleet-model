@@ -164,11 +164,16 @@ def get_trip_summary(trip_id: uuid.UUID,
     if trip.main_driver_id:
         driver_score = _get_or_compute_driver_safety_score(trip.main_driver_id, fleet_db, iot_db, ml_db)
     
+    
+    # Filter out features the user doesn't want to see in the response
+    unwanted_keys = ["harsh_accel_count", "harsh_accel_rate", "idling_ratio", "crash_events"]
+    filtered_features = {k: v for k, v in features.items() if k not in unwanted_keys} if features else None
+
     return _to_native({
         "trip_id": trip_id,
         "driver_id": trip.main_driver_id,
         "trip_safety_score": trip_score,
-        "trip_safety_features": features,
+        "trip_safety_features": filtered_features,
         "trip_violations_risk": violations_risk,
         "trip_violations_count": len(trip_violations),
         "trip_violations_summary": violations_summary,
