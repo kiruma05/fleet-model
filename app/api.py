@@ -1,12 +1,12 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
-from db_utils import get_iot_db, get_fleet_db, get_ml_db, init_db
-from models import Trip, Violation, DriverSafetyScore, IOTTelemetry
-import safety_score
-import violations
-import maintenance
-import fuel_efficiency
-import ml_pipeline
+from app.database.db_utils import get_iot_db, get_fleet_db, get_ml_db, init_db
+from app.database.models import Trip, Violation, DriverSafetyScore, IOTTelemetry
+from app.services import safety_score
+from app.services import violations
+from app.services import maintenance
+from app.services import fuel_efficiency
+from app.services import ml_pipeline
 import datetime
 import traceback
 import sys

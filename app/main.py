@@ -1,6 +1,6 @@
 import time
 import logging
-from db_utils import init_db
+from app.database.db_utils import init_db
 from scheduler import start_scheduler, stop_scheduler
 
 logging.basicConfig(

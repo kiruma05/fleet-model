@@ -26,6 +26,4 @@ USER appuser
 # Expose port (documented, though docker-compose handles it)
 EXPOSE 8000
 
-# Run with Gunicorn
-# 4 workers, binding to 0.0.0.0
-CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "api:app", "--bind", "0.0.0.0:8000"]
+CMD ["uvicorn", "app.api:app", "--host", "0.0.0.0", "--port", "8000"]

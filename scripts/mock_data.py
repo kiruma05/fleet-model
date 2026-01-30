@@ -1,7 +1,7 @@
 import random
 from datetime import datetime, timedelta
-from db_utils import IOTSessionLocal, FleetSessionLocal, init_db
-from models import IOTTelemetry, Trip, Violation, MaintenancePrediction
+from app.database.db_utils import IOTSessionLocal, FleetSessionLocal, init_db
+from app.database.models import IOTTelemetry, Trip, Violation, MaintenancePrediction
 import uuid
 
 def generate_mock_data():

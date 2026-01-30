@@ -1,9 +1,9 @@
 import logging
 from datetime import datetime, timedelta
 import pandas as pd
-from collector import FleetCoteDataCollector
-from db_utils import IOTSessionLocal, FleetSessionLocal, init_db
-from models import IOTTelemetry, Trip
+from app.services.collector import FleetCoteDataCollector
+from app.database.db_utils import IOTSessionLocal, FleetSessionLocal, init_db
+from app.database.models import IOTTelemetry, Trip
 import time
 
 logging.basicConfig(

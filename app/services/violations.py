@@ -1,4 +1,4 @@
-from models import IOTTelemetry, Violation, Trip
+from app.database.models import IOTTelemetry, Violation, Trip
 from sqlalchemy.orm import Session
 from typing import Optional
 import logging

@@ -1,7 +1,7 @@
 from sqlalchemy import func
 import pandas as pd
 import numpy as np
-from models import IOTTelemetry, Event, Trip, Violation, DriverSafetyScore
+from app.database.models import IOTTelemetry, Event, Trip, Violation, DriverSafetyScore
 from sqlalchemy.orm import Session
 import datetime
 

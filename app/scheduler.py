@@ -1,12 +1,12 @@
 from apscheduler.schedulers.background import BackgroundScheduler
-from collector import FleetCoteDataCollector
-from db_utils import IOTSessionLocal, FleetSessionLocal
-from models import IOTTelemetry, Trip, Violation
+from app.services.collector import FleetCoteDataCollector
+from app.database.db_utils import IOTSessionLocal, FleetSessionLocal
+from app.database.models import IOTTelemetry, Trip, Violation
 import logging
 from datetime import datetime, timedelta
-import safety_score
-import violations
-import maintenance
+from app.services import safety_score
+from app.services import violations
+from app.services import maintenance
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

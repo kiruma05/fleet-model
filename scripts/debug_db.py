@@ -12,7 +12,7 @@ if not DB_URL:
 engine = create_engine(DB_URL)
 
 from sqlalchemy.orm import sessionmaker
-from models import IOTTelemetry
+from app.database.models import IOTTelemetry
 
 SessionLocal = sessionmaker(bind=engine)
 

@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine, inspect
-from db_utils import FLEET_DATABASE_URL
+from app.database.db_utils import FLEET_DATABASE_URL
 
 engine = create_engine(FLEET_DATABASE_URL)
 inspector = inspect(engine)

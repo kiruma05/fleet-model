@@ -10,10 +10,10 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error, r2_score, accuracy_score
 
-import fuel_efficiency
-import safety_score
-import violations
-from models import IOTTelemetry, Trip, ModelArtifact
+from app.services from app.services import fuel_efficiency
+from app.services from app.services import safety_score
+from app.services from app.services import violations
+from app.database.models import IOTTelemetry, Trip, ModelArtifact
 
 MIN_SAMPLES = 5
 

@@ -1,5 +1,5 @@
-from db_utils import FleetSessionLocal
-from models import Trip
+from app.database.db_utils import FleetSessionLocal
+from app.database.models import Trip
 import uuid
 
 vehicle_id = "6a5643f3-61b8-49ca-9260-e5a4221cb607"

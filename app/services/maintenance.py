@@ -1,4 +1,4 @@
-from models import IOTTelemetry, MaintenancePrediction, Trip
+from app.database.models import IOTTelemetry, MaintenancePrediction, Trip
 from sqlalchemy.orm import Session
 import pandas as pd
 import numpy as np
